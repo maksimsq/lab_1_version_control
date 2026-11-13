@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { validateUrl, prepareFetchOptions, calculatePayloadSize } = require('./src/utils/proxyUtils');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,29 +13,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS-Proxy Endpoint for PostmanLite Client
 app.post('/api/proxy', async (req, res) => {
-  const { url, method, headers, body } = req.body;
+  const { url, method, headers, body } = req.body || {};
 
-  if (!url) {
-    return res.status(400).json({ error: 'Missing target request URL.' });
-  }
-
-  // Validate URL protocol
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    return res.status(400).json({ error: 'Invalid URL. Protocol must be http:// or https://' });
+  const validation = validateUrl(url);
+  if (!validation.isValid) {
+    return res.status(400).json({ error: validation.error });
   }
 
   const startTime = Date.now();
 
   try {
-    const fetchOptions = {
-      method: method || 'GET',
-      headers: headers || {}
-    };
-
-    // Only forward body for appropriate HTTP methods
-    if (body && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-      fetchOptions.body = typeof body === 'object' ? JSON.stringify(body) : body;
-    }
+    const fetchOptions = prepareFetchOptions(method, headers, body);
 
     // Perform external fetch
     const response = await fetch(url, fetchOptions);
@@ -42,14 +31,18 @@ app.post('/api/proxy', async (req, res) => {
 
     // Collect response headers
     const responseHeaders = {};
-    response.headers.forEach((val, key) => {
-      responseHeaders[key] = val;
-    });
+    if (response.headers && typeof response.headers.forEach === 'function') {
+      response.headers.forEach((val, key) => {
+        responseHeaders[key] = val;
+      });
+    }
 
     // Read body text or json safely
     let responseData = '';
-    const contentType = response.headers.get('content-type') || '';
-    
+    const contentType = (response.headers && typeof response.headers.get === 'function')
+      ? (response.headers.get('content-type') || '')
+      : '';
+
     if (contentType.includes('application/json')) {
       try {
         responseData = await response.json();
@@ -57,12 +50,11 @@ app.post('/api/proxy', async (req, res) => {
         responseData = await response.text();
       }
     } else {
-      responseData = await response.text();
+      responseData = typeof response.text === 'function' ? await response.text() : '';
     }
 
     // Estimate payload size in bytes
-    const bodyStr = typeof responseData === 'object' ? JSON.stringify(responseData) : String(responseData);
-    const sizeBytes = Buffer.byteLength(bodyStr, 'utf8');
+    const sizeBytes = calculatePayloadSize(responseData);
 
     res.json({
       status: response.status,
@@ -88,9 +80,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`🚀 Developer Hub Proxy running on port ${PORT}`);
-  console.log(`🏠 Local URL: http://localhost:${PORT}`);
-  console.log(`===============================================`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`🚀 Developer Hub Proxy running on port ${PORT}`);
+    console.log(`🏠 Local URL: http://localhost:${PORT}`);
+    console.log(`===============================================`);
+  });
+}
+
+module.exports = app;
