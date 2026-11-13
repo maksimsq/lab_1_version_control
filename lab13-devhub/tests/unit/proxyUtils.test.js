@@ -9,9 +9,9 @@ describe('Модульні тести (Unit Tests) - Proxy Utils', () => {
   // Модульний тест 1: Валідація цільової URL-адреси
   describe('Тест 1: validateUrl', () => {
     test('повинен повертати помилку, якщо URL порожній або відсутній', () => {
+      // Навмисна помилка для перевірки реакції CI (очікуємо isValid: true замість false)
       expect(validateUrl('')).toEqual({
-        isValid: false,
-        error: 'Missing target request URL.'
+        isValid: true
       });
       expect(validateUrl(null)).toEqual({
         isValid: false,
