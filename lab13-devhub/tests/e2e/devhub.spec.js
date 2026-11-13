@@ -16,38 +16,38 @@ test.describe('E2E Тести (End-to-End) - Developer Hub & PostmanLite UI', ()
   // E2E Тест 2: Навігація між основними розділами (вкладками)
   test('2. Навігація між вкладками панелі керування (API Tester, JWT & Utils, About, Docker)', async ({ page }) => {
     // Перехід на вкладку JWT & Utils
-    await page.locator('#nav-btn-utils').click({ force: true });
+    await page.click('#nav-btn-utils');
     await expect(page.locator('#tab-utils')).toBeVisible();
     await expect(page.locator('#tab-tester')).not.toBeVisible();
 
     // Перехід на вкладку About & Lab
-    await page.locator('#nav-btn-about').click({ force: true });
+    await page.click('#nav-btn-about');
     await expect(page.locator('#tab-about')).toBeVisible();
 
     // Перехід на вкладку Docker & Hosting
-    await page.locator('#nav-btn-deploy').click({ force: true });
+    await page.click('#nav-btn-deploy');
     await expect(page.locator('#tab-deploy')).toBeVisible();
 
     // Повернення на головну вкладку API Tester
-    await page.locator('#nav-btn-tester').click({ force: true });
+    await page.click('#nav-btn-tester');
     await expect(page.locator('#tab-tester')).toBeVisible();
   });
 
   // E2E Тест 3: Інтерактивна робота з конструктором запитів (Headers / Body)
   test('3. Інтерактивна взаємодія з Request Builder (перемикання підвкладок, додавання хедерів)', async ({ page }) => {
     // Перемикання на підвкладку Body
-    await page.locator('#req-tab-btn-body').click({ force: true });
+    await page.click('#req-tab-btn-body');
     await expect(page.locator('#req-tab-content-body')).toBeVisible();
     await page.fill('#req-body-content', '{"test": "playwright"}');
     await expect(page.locator('#req-body-content')).toHaveValue('{"test": "playwright"}');
 
     // Перемикання на підвкладку Headers
-    await page.locator('#req-tab-btn-headers').click({ force: true });
+    await page.click('#req-tab-btn-headers');
     await expect(page.locator('#req-tab-content-headers')).toBeVisible();
 
     // Додавання нового поля заголовка
     const initialRowsCount = await page.locator('.header-row').count();
-    await page.locator('button', { hasText: '+ Add Header' }).click({ force: true });
+    await page.click('text=+ Add Header');
     await expect(page.locator('.header-row')).toHaveCount(initialRowsCount + 1);
   });
 
@@ -55,8 +55,7 @@ test.describe('E2E Тести (End-to-End) - Developer Hub & PostmanLite UI', ()
   test('4. Валідація обов’язкового поля вводу цільового URL', async ({ page }) => {
     const urlInput = page.locator('#req-url');
     await urlInput.fill('');
-
-    await page.locator('#btn-send-req').click({ force: true });
+    await page.click('#btn-send-req');
 
     // Перевіряємо браузерну валідацію HTML5
     const isInvalid = await urlInput.evaluate((el) => !el.checkValidity());
